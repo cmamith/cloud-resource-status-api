@@ -14,20 +14,20 @@ async def check_ec2() -> str:
     return "healthy"
 
 
-# async def check_rds() -> str:
-#     logger.info("Checking RDS")
-
-#     await asyncio.sleep(3)
-
-#     logger.info("RDS check complete")
-#     return "healthy"
-
 async def check_rds() -> str:
     logger.info("Checking RDS")
 
-    await asyncio.sleep(2)
+    await asyncio.sleep(1)
 
-    raise Exception("RDS API unavailable")
+    logger.info("RDS check complete")
+    return "healthy"
+
+# async def check_rds() -> str:
+#     logger.info("Checking RDS")
+
+#     await asyncio.sleep(2)
+
+#     raise Exception("RDS API unavailable")
 
 
 async def check_eks() -> str:
