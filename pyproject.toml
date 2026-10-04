@@ -1,0 +1,6 @@
+[project]
+name = "cloud-status-api"
+version = "0.1.0"
+description = "Cloud Status API capstone project"
+requires-python = ">=3.10"
+dependencies = []

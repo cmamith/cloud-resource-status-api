@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Cloud Resource Status Dashboard</title>
+
+    <link
+        rel="stylesheet"
+        href="/static/styles.css"
+    >
+</head>
+
+<body>
+
+<div class="container">
+
+    <header>
+        <div class="header-content">
+            <h1>Cloud Resource Status</h1>
+            <p>Platform health and resource visibility</p>
+    
+            <div class="tech-stack">
+                FastAPI • AsyncIO • Pydantic • Pytest
+            </div>
+    
+            <div class="demo-badge">
+                Demo environment • Simulated cloud checks
+            </div>
+        </div>
+    
+        <button onclick="loadDashboard()">
+            Refresh
+        </button>
+    </header>
+
+
+    <section>
+
+        <div class="overall-summary">
+            <span
+                id="overall-status"
+                class="overall-status">
+                CHECKING
+            </span>
+        
+            <span
+                id="overall-detail"
+                class="overall-detail">
+                Checking services...
+            </span>
+        </div>
+        <div class="status-grid">
+
+            <div class="status-card">
+                <h3>EC2</h3>
+                <span
+                    id="ec2-status"
+                    class="status loading">
+                    Loading...
+                </span>
+            </div>
+
+            <div class="status-card">
+                <h3>RDS</h3>
+                <span
+                    id="rds-status"
+                    class="status loading">
+                    Loading...
+                </span>
+            </div>
+
+            <div class="status-card">
+                <h3>EKS</h3>
+                <span
+                    id="eks-status"
+                    class="status loading">
+                    Loading...
+                </span>
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <section>
+
+        <div class="section-header">
+            <h2>EC2 Instances</h2>
+            <span id="instance-count"></span>
+        </div>
+
+        <div class="table-container">
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>Instance ID</th>
+                        <th>Region</th>
+                        <th>State</th>
+                    </tr>
+                </thead>
+
+                <tbody id="instance-table">
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+
+    <footer>
+        Last refreshed:
+        <span id="last-updated">-</span>
+    </footer>
+
+</div>
+
+
+<script>
+
+function updateStatus(service, value) {
+
+    const element =
+        document.getElementById(
+            `${service}-status`
+        );
+
+    element.textContent =
+        value.toUpperCase();
+
+    element.className =
+        `status ${value}`;
+}
+
+
+async function loadDashboard() {
+
+    try {
+
+        const statusResponse =
+            await fetch(
+                "/platform-status"
+            );
+
+        const status =
+            await statusResponse.json();
+
+        updateStatus(
+            "ec2",
+            status.ec2
+        );
+
+        updateStatus(
+            "rds",
+            status.rds
+        );
+
+        updateStatus(
+            "eks",
+            status.eks
+        );
+
+
+        const instanceResponse =
+            await fetch(
+                "/instances"
+            );
+
+        const instances =
+            await instanceResponse.json();
+
+        const table =
+            document.getElementById(
+                "instance-table"
+            );
+
+        table.innerHTML = "";
+
+
+        instances.forEach(instance => {
+
+            const row =
+                document.createElement(
+                    "tr"
+                );
+
+            row.innerHTML = `
+                <td class="resource-id">
+                    ${instance.instance_id}
+                </td>
+
+                <td>
+                    ${instance.region}
+                </td>
+
+                <td>
+                    <span
+                        class="instance-state ${instance.state}">
+                        ${instance.state}
+                    </span>
+                </td>
+            `;
+
+            table.appendChild(row);
+
+        });
+
+
+        document.getElementById(
+            "instance-count"
+        ).textContent =
+            `${instances.length} resources`;
+
+
+        document.getElementById(
+            "last-updated"
+        ).textContent =
+            new Date()
+                .toLocaleTimeString();
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Dashboard refresh failed",
+            error
+        );
+
+    }
+}
+
+
+loadDashboard();
+
+</script>
+<script src="/static/dashboard.js"></script>
+</body>
+</html>
