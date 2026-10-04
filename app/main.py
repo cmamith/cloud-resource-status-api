@@ -1,4 +1,11 @@
 from fastapi import FastAPI, HTTPException
+from app.checks import (
+    get_platform_status,
+    calculate_severity
+)
+from app.ai_analysis import analyze_platform_status
+from app.models import PlatformStatus, AIPlatformAnalysis
+
 import asyncio
 from app.services import (
     get_instance_status,
@@ -59,18 +66,7 @@ def get_instance(instance_id: str) -> InstanceStatus:
 
 @app.get("/platform-status")
 async def platform_status() -> dict[str, str]:
-
-    ec2, rds, eks = await asyncio.gather(
-        run_check(check_ec2),
-        run_check(check_rds),
-        run_check(check_eks)
-    )
-
-    return {
-        "ec2": ec2,
-        "rds": rds,
-        "eks": eks
-    }
+    return await get_platform_status()
 
 @app.get(
     "/instances",
@@ -90,3 +86,35 @@ async def dashboard(request: Request):
         name="dashboard.html",
         context={}
     )
+
+@app.post(
+    "/ai/analyze",
+    response_model=AIPlatformAnalysis
+)
+async def ai_analyze(
+    status: PlatformStatus
+) -> AIPlatformAnalysis:
+
+    status_data = status.model_dump()
+
+    severity = calculate_severity(
+        status_data
+    )
+
+    try:
+        analysis = await analyze_platform_status(
+            status_data,
+            severity
+        )
+
+        return analysis
+
+    except Exception:
+        logger.exception(
+            "AI platform analysis failed"
+        )
+
+        raise HTTPException(
+            status_code=502,
+            detail="AI analysis unavailable"
+        )

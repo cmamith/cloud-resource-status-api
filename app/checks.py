@@ -47,3 +47,34 @@ async def run_check(check, timeout: int = 3) -> str:
     except Exception:
         logger.exception("Check failed")
         return "failed"
+    
+async def get_platform_status() -> dict[str, str]:
+
+    ec2, rds, eks = await asyncio.gather(
+        run_check(check_ec2),
+        run_check(check_rds),
+        run_check(check_eks)
+    )
+
+    return {
+        "ec2": ec2,
+        "rds": rds,
+        "eks": eks
+    }
+
+def calculate_severity(
+    status: dict[str, str]
+) -> str:
+
+    unhealthy = sum(
+        state != "healthy"
+        for state in status.values()
+    )
+
+    if unhealthy == 0:
+        return "healthy"
+
+    if unhealthy == 1:
+        return "degraded"
+
+    return "critical"

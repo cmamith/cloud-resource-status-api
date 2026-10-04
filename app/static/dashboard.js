@@ -64,6 +64,8 @@ async function loadDashboard() {
 
         updateOverallStatus(status);
 
+        await loadAIAnalysis(status);
+
 
         const instanceResponse =
             await fetch("/instances");
@@ -119,5 +121,108 @@ async function loadDashboard() {
     }
 }
 
+async function loadAIAnalysis(status) {
+    const severityElement =
+        document.getElementById("ai-severity");
+
+    const summaryElement =
+        document.getElementById("ai-summary");
+
+    const impactElement =
+        document.getElementById("ai-impact");
+
+    const recommendationsElement =
+        document.getElementById(
+            "ai-recommendations"
+        );
+
+    severityElement.textContent =
+        "ANALYZING";
+
+    severityElement.className =
+        "overall-status loading";
+
+    summaryElement.textContent =
+        "Analyzing current platform status...";
+
+    impactElement.textContent = "-";
+
+    recommendationsElement.innerHTML = "";
+
+    try {
+        const response = await fetch(
+            "/ai/analyze",
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+
+                body: JSON.stringify(status)
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(
+                "AI analysis request failed"
+            );
+        }
+
+        const analysis =
+            await response.json();
+
+
+        severityElement.textContent =
+            analysis.severity.toUpperCase();
+
+        severityElement.className =
+            `overall-status ${analysis.severity}`;
+
+
+        summaryElement.textContent =
+            analysis.summary;
+
+
+        impactElement.textContent =
+            analysis.possible_impact;
+
+
+        recommendationsElement.innerHTML =
+            "";
+
+        analysis.recommended_checks.forEach(
+            check => {
+
+                const item =
+                    document.createElement("li");
+
+                item.textContent = check;
+
+                recommendationsElement
+                    .appendChild(item);
+            }
+        );
+
+    } catch (error) {
+
+        console.error(
+            "AI analysis failed",
+            error
+        );
+
+        severityElement.textContent =
+            "UNAVAILABLE";
+
+        severityElement.className =
+            "overall-status failed";
+
+        summaryElement.textContent =
+            "AI analysis is currently unavailable.";
+
+        impactElement.textContent = "-";
+    }
+}
 
 loadDashboard();
